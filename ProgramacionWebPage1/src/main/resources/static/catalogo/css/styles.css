@@ -1,0 +1,26 @@
+:root { --ink:#14212b; --bg:#f3f5f7; --accent:#0f766e; --line:#d9e0e6; }
+body { background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+.brand { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.35rem; color: var(--accent); }
+
+/* Flexbox: header */
+.header-flex { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.search-wrap { position: relative; flex: 1; max-width: 520px; }
+.form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 .2rem rgba(15,118,110,.2); }
+.suggestions { position: absolute; top: 100%; left: 0; right: 0; z-index: 20; margin-top: 4px; box-shadow: 0 8px 24px rgba(20,33,43,.12); }
+.suggestions .list-group-item { cursor: pointer; display: flex; justify-content: space-between; gap: .5rem; }
+.suggestions .list-group-item.active-item, .suggestions .list-group-item:hover { background: #e6f2f1; }
+
+/* CSS Grid: product cards */
+.products-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+.product-card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 1.1rem; display: flex; flex-direction: column; gap: .6rem; }
+.product-card h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; margin: 0; }
+.product-card .details { margin: auto 0 0; padding-top: .6rem; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr; gap: .4rem .8rem; font-size: .85rem; }
+.product-card dt { color: #5b6b78; font-weight: 500; }
+.product-card dd { margin: 0; font-weight: 600; }
+mark { background: #fde68a; padding: 0 1px; border-radius: 2px; }
+
+/* Media queries: columns and header by screen width (mobile-first) */
+@media (max-width: 575.98px) { .header-flex { flex-direction: column; align-items: stretch; } .search-wrap { max-width: none; } }
+@media (min-width: 576px)  { .products-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 992px)  { .products-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1400px) { .products-grid { grid-template-columns: repeat(4, 1fr); } }

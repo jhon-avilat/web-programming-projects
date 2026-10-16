@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Product Catalog</title>
+  <!-- Bootstrap 5: navbar, input, badges, alerts -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS (CDN): utilities prefixed with tw- so they don't clash with Bootstrap -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>tailwind.config = { prefix: 'tw-', corePlugins: { preflight: false } };</script>
+  <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar bg-white border-bottom sticky-top">
+    <div class="container header-flex">
+      <div class="d-flex align-items-center gap-3">
+        <a href="/" class="btn btn-outline-secondary btn-sm">Back to menu</a>
+        <span class="brand">Catalog</span>
+      </div>
+      <div class="search-wrap">
+        <input id="search" type="search" class="form-control" placeholder="Search by name, code or description"
+               autocomplete="off" role="combobox" aria-expanded="false" aria-controls="suggestions" aria-label="Search products">
+        <ul id="suggestions" class="list-group suggestions" role="listbox" hidden></ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <div id="notice"></div>
+    <p id="counter" class="tw-text-sm tw-text-slate-600 tw-mb-3" aria-live="polite"></p>
+    <section id="grid" class="products-grid" aria-label="Products"></section>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

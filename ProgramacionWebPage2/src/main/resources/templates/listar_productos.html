@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8">
+        <title>Product Management</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    </head>
+    <body>
+        <div class="container my-2">
+            <h1>Product Report</h1>
+            <a th:href="@{/mostrarFormNuevoProducto}" class="btn btn-primary btn-sm mb-3">Insert Product</a>
+            <table border="1" class="table table-striped table-responsive-md">
+                <thead>
+                    <tr><th>Product No.</th><th>Code</th><th>Name</th><th>Description</th><th>Price</th><th>Stock</th><th>Date Added</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    <tr th:each="productos : ${listProductos}">
+                        <td th:text="${productos.numProducto}"></td>
+                        <td th:text="${productos.codigo}"></td>
+                        <td th:text="${productos.nomProducto}"></td>
+                        <td th:text="${productos.descripcion}"></td>
+                        <td th:text="${productos.precio}"></td>
+                        <td th:text="${productos.stock}"></td>
+                        <td th:text="${productos.fechIngreso}"></td>
+                        <td>
+                            <a th:href="@{/mostrarFormActualizarProd/{numProd}(numProd=${productos.numProducto})}" class="btn btn-primary">Edit</a>
+                            <a th:href="@{/eliminarProducto/{numProd}(numProd=${productos.numProducto})}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this product?');">Delete</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <a th:href="@{/}">Back to menu</a>
+        </div>
+    </body>
+</html>

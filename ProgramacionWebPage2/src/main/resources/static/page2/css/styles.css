@@ -1,0 +1,27 @@
+:root { --ink:#16241c; --bg:#eef3f0; --accent:#2f7d32; --line:#d5dfd9; }
+body { background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+.brand { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.3rem; color: var(--accent); }
+
+/* Flexbox: header */
+.header-flex { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.search-wrap { flex: 1; max-width: 480px; }
+.form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 .2rem rgba(47,125,50,.2); }
+
+/* CSS Grid: character cards */
+.characters-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+.character-card { background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; cursor: pointer; }
+.character-card:hover, .character-card:focus-visible { border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: 1px; }
+.character-card img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; background: #dfe8e2; }
+.character-card .body { padding: .9rem 1rem 1rem; display: flex; flex-direction: column; gap: .5rem; }
+.character-card h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; margin: 0; }
+.data { display: grid; grid-template-columns: auto 1fr; gap: .25rem .75rem; margin: 0; font-size: .85rem; }
+.data dt { color: #5a6b61; font-weight: 500; }
+.data dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.episodes { max-height: 220px; overflow-y: auto; font-size: .85rem; padding-left: 1.1rem; margin: 0; }
+
+/* Media queries (mobile-first) */
+@media (max-width: 575.98px) { .header-flex { flex-direction: column; align-items: stretch; } .search-wrap { max-width: none; } }
+@media (min-width: 576px)  { .characters-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 992px)  { .characters-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1400px) { .characters-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 768px)  { .detail-flex { flex-direction: row !important; } .detail-flex img { width: 260px; } }
