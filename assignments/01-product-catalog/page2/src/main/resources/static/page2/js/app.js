@@ -9,10 +9,16 @@ const DELAY_MS = 4000; // search delay: 4 seconds
 const $search = document.getElementById("search");
 const $grid = document.getElementById("grid");
 const $status = document.getElementById("status");
+const $pager = document.getElementById("pager");
+const $statusFilter = document.getElementById("statusFilter");
 const $prev = document.getElementById("prev");
 const $next = document.getElementById("next");
 const $pageInfo = document.getElementById("pageInfo");
+const $tabAll = document.getElementById("tabAll");
+const $tabFav = document.getElementById("tabFav");
+const $favCount = document.getElementById("favCount");
 const $title = document.getElementById("modalTitle");
+const $modalFav = document.getElementById("modalFav");
 const $body = document.getElementById("modalBody");
 const modal = new bootstrap.Modal(document.getElementById("detailModal"));
 
@@ -20,12 +26,15 @@ const STATUS_CLASS = { Alive: "text-bg-success", Dead: "text-bg-danger", unknown
 const dateFmt = new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "UTC" });
 
 let characters = [], info = null, page = 1, ctrl = null, timer = null, tick = null, openId = null;
+let view = "all";            // "all" = search results, "fav" = favorites tab
+let favorites = new Map();   // characterId -> favorite saved in our database
 
 // Escape HTML: data from a third-party API must never be inserted raw (XSS)
 const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const res502 = (err) => err && err.cause === 502; // our backend says the external API failed
 const statusClass = (c) => STATUS_CLASS[c.status] || STATUS_CLASS.unknown;
+const isFav = (id) => favorites.has(id);
 
 // ===== Load from the API (fetch + async/await) =====
 async function search(num = 1) {
@@ -33,10 +42,12 @@ async function search(num = 1) {
   ctrl = new AbortController();
   page = num;
   const name = $search.value.trim();
+  const status = $statusFilter.value; // "" = all
   $status.textContent = "Loading characters…";
+  showSkeleton();
   try {
-    const res = await fetch(`${BACKEND}/characters?page=${num}&name=${encodeURIComponent(name)}`, { signal: ctrl.signal });
-    if (res.status === 404) { characters = []; info = null; render(); $status.textContent = "No characters found with that name."; return; }
+    const res = await fetch(`${BACKEND}/characters?page=${num}&name=${encodeURIComponent(name)}&status=${status}`, { signal: ctrl.signal });
+    if (res.status === 404) { characters = []; info = null; render(); $status.textContent = "No characters found with those filters."; return; }
     if (!res.ok) throw new Error(`HTTP ${res.status}`, { cause: res.status });
     const data = await res.json();
     characters = data.results; info = data.info;
@@ -50,6 +61,7 @@ async function search(num = 1) {
 
 // ===== Search with a 4-second delay (debounce) and a visible countdown =====
 function scheduleSearch() {
+  if (view !== "all") showTab("all");
   clearTimeout(timer); clearInterval(tick);
   let sec = DELAY_MS / 1000;
   $status.textContent = `Searching in ${sec} s…`;
@@ -57,11 +69,61 @@ function scheduleSearch() {
   timer = setTimeout(() => { clearInterval(tick); search(1); }, DELAY_MS);
 }
 
+// ===== Favorites (saved in PostgreSQL through /api/favorites) =====
+async function loadFavorites() {
+  try {
+    const res = await fetch(`${BACKEND}/favorites`);
+    if (!res.ok) throw new Error();
+    favorites = new Map((await res.json()).map((f) => [f.characterId, f]));
+  } catch {
+    favorites = new Map(); // the page still works, only without favorites
+  }
+  updateFavCount();
+}
+
+// Adds or removes a favorite. c can be a full character (search) or a saved favorite.
+async function toggleFavorite(c) {
+  // A saved favorite has characterId (its own "id" is the database row); a character from the API only has id
+  const id = c.characterId ?? c.id;
+  try {
+    if (isFav(id)) {
+      const res = await fetch(`${BACKEND}/favorites/${id}`, { method: "DELETE" });
+      if (!res.ok && res.status !== 404) throw new Error();
+      favorites.delete(id);
+    } else {
+      const res = await fetch(`${BACKEND}/favorites`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ characterId: id, name: c.name, image: c.image, status: c.status, species: c.species }),
+      });
+      if (!res.ok && res.status !== 409) throw new Error();
+      favorites.set(id, res.status === 409 ? { characterId: id, ...c } : await res.json());
+    }
+  } catch {
+    $status.textContent = "Could not update favorites. Try again.";
+    return;
+  }
+  updateFavCount();
+  if (openId === id) setModalFav(id);
+  render();
+}
+
+function updateFavCount() { $favCount.textContent = favorites.size; }
+
+const heart = (id, name) => `
+  <button type="button" class="fav-btn ${isFav(id) ? "is-fav" : ""}" data-fav="${id}"
+          aria-pressed="${isFav(id)}" aria-label="${isFav(id) ? "Remove" : "Add"} ${escapeHtml(name)} ${isFav(id) ? "from" : "to"} favorites">
+    ${isFav(id) ? "♥" : "♡"}
+  </button>`;
+
 // ===== Cards =====
 function card(c) {
   return `
   <article class="character-card" data-id="${c.id}" tabindex="0" role="button" aria-label="View details of ${escapeHtml(c.name)}">
-    <img src="${escapeHtml(c.image)}" alt="Picture of ${escapeHtml(c.name)}" loading="lazy">
+    <div class="img-wrap">
+      <img src="${escapeHtml(c.image)}" alt="Picture of ${escapeHtml(c.name)}" loading="lazy">
+      ${heart(c.id, c.name)}
+    </div>
     <div class="body">
       <div class="tw-flex tw-items-start tw-justify-between tw-gap-2">
         <h2>${escapeHtml(c.name)}</h2><span class="badge ${statusClass(c)}">${escapeHtml(c.status)}</span>
@@ -78,19 +140,84 @@ function card(c) {
   </article>`;
 }
 
+// Smaller card for the Favorites tab (we only saved name, image, status and species)
+function favCard(f) {
+  return `
+  <article class="character-card" data-id="${f.characterId}" tabindex="0" role="button" aria-label="View details of ${escapeHtml(f.name)}">
+    <div class="img-wrap">
+      <img src="${escapeHtml(f.image)}" alt="Picture of ${escapeHtml(f.name)}" loading="lazy">
+      ${heart(f.characterId, f.name)}
+    </div>
+    <div class="body">
+      <div class="tw-flex tw-items-start tw-justify-between tw-gap-2">
+        <h2>${escapeHtml(f.name)}</h2><span class="badge ${statusClass(f)}">${escapeHtml(f.status || "unknown")}</span>
+      </div>
+      <dl class="data"><dt>Species</dt><dd>${escapeHtml(f.species) || "—"}</dd></dl>
+    </div>
+  </article>`;
+}
+
+// Grey placeholder cards while the data arrives, so the page doesn't jump around
+function showSkeleton(n = 8) {
+  $grid.innerHTML = Array.from({ length: n }, () => `
+    <div class="character-card skeleton" aria-hidden="true">
+      <div class="sk-img"></div>
+      <div class="body"><div class="sk-line w-75"></div><div class="sk-line w-50"></div><div class="sk-line w-100"></div></div>
+    </div>`).join("");
+}
+
 function render() {
+  if (view === "fav") {
+    const list = [...favorites.values()];
+    $grid.innerHTML = list.length
+      ? list.map(favCard).join("")
+      : `<p class="empty">You have no favorites yet. Tap the ♡ on any character to save it here.</p>`;
+    $pager.hidden = true;
+    return;
+  }
   $grid.innerHTML = characters.map(card).join("");
+  $pager.hidden = false;
   $prev.disabled = !info || !info.prev;
   $next.disabled = !info || !info.next;
   $pageInfo.textContent = info ? `Page ${page} of ${info.pages}` : "";
 }
 
+function showTab(tab) {
+  view = tab;
+  $tabAll.classList.toggle("active", tab === "all");
+  $tabFav.classList.toggle("active", tab === "fav");
+  $tabAll.setAttribute("aria-selected", tab === "all");
+  $tabFav.setAttribute("aria-selected", tab === "fav");
+  $statusFilter.disabled = tab === "fav";
+  if (tab === "fav") $status.textContent = `${favorites.size} favorite${favorites.size === 1 ? "" : "s"}`;
+  else $status.textContent = info ? `${info.count} characters found` : "";
+  render();
+}
+
 // ===== Full details (overlay window) =====
+function setModalFav(id) {
+  $modalFav.classList.toggle("is-fav", isFav(id));
+  $modalFav.textContent = isFav(id) ? "♥ In favorites" : "♡ Add to favorites";
+  $modalFav.setAttribute("aria-pressed", isFav(id));
+}
+
 async function openDetail(id) {
-  const c = characters.find((x) => x.id === id);
-  if (!c) return;
+  // From the search results we already have the character; from Favorites we ask our backend
+  let c = characters.find((x) => x.id === id);
+  if (!c) {
+    try {
+      const res = await fetch(`${BACKEND}/characters/${id}`);
+      if (!res.ok) throw new Error();
+      c = await res.json();
+    } catch {
+      $status.textContent = "Could not load that character.";
+      return;
+    }
+  }
   openId = id;
   $title.textContent = c.name;
+  setModalFav(id);
+  $modalFav.onclick = () => toggleFavorite(c);
   $body.innerHTML = `
     <div class="tw-flex tw-flex-col tw-gap-4 detail-flex">
       <img src="${escapeHtml(c.image)}" alt="Picture of ${escapeHtml(c.name)}" class="tw-rounded-lg tw-w-full tw-self-start">
@@ -129,10 +256,37 @@ async function openDetail(id) {
 $search.addEventListener("input", scheduleSearch);
 $prev.addEventListener("click", () => search(page - 1));
 $next.addEventListener("click", () => search(page + 1));
-$grid.addEventListener("click", (e) => { const el = e.target.closest("[data-id]"); if (el) openDetail(Number(el.dataset.id)); });
+// Changing the status filter searches right away (no 4-second wait: it is a single click, not typing)
+$statusFilter.addEventListener("change", () => { if (view !== "all") showTab("all"); search(1); });
+$tabAll.addEventListener("click", () => showTab("all"));
+$tabFav.addEventListener("click", () => showTab("fav"));
+$grid.addEventListener("click", (e) => {
+  const favBtn = e.target.closest("[data-fav]");
+  if (favBtn) { // the heart only toggles the favorite, it does not open the details
+    e.stopPropagation();
+    const id = Number(favBtn.dataset.fav);
+    toggleFavorite(characters.find((x) => x.id === id) || favorites.get(id));
+    return;
+  }
+  const el = e.target.closest("[data-id]");
+  if (el) openDetail(Number(el.dataset.id));
+});
 $grid.addEventListener("keydown", (e) => {
+  if (e.target.closest("[data-fav]")) return; // Enter on the heart is a normal button click
   const el = e.target.closest("[data-id]");
   if (el && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openDetail(Number(el.dataset.id)); }
 });
+document.getElementById("detailModal").addEventListener("hidden.bs.modal", () => { openId = null; });
 
-search(1); // initial load without waiting
+// ===== Dark / light theme (remembered in this browser) =====
+const $themeToggle = document.getElementById("themeToggle");
+function applyTheme(t) {
+  document.documentElement.setAttribute("data-bs-theme", t);
+  $themeToggle.textContent = t === "dark" ? "☀️" : "🌙";
+  try { localStorage.setItem("page2-theme", t); } catch { /* private mode: just don't remember it */ }
+}
+$themeToggle.addEventListener("click", () =>
+  applyTheme(document.documentElement.getAttribute("data-bs-theme") === "dark" ? "light" : "dark"));
+$themeToggle.textContent = document.documentElement.getAttribute("data-bs-theme") === "dark" ? "☀️" : "🌙";
+
+loadFavorites().then(() => search(1)); // initial load without waiting
