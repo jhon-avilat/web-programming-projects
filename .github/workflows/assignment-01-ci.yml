@@ -1,0 +1,72 @@
+# CI for assignment 01 (Page 1 + Page 2).
+# It only runs when something inside assignments/01-product-catalog changes,
+# so future assignments in this monorepo get their own workflow and don't slow each other down.
+name: "Assignment 01 · CI"
+
+on:
+  pull_request:
+    paths:
+      - "assignments/01-product-catalog/**"
+      - ".github/workflows/assignment-01-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "assignments/01-product-catalog/**"
+      - ".github/workflows/assignment-01-ci.yml"
+  workflow_dispatch:
+
+# If I push again to the same branch, cancel the old run instead of running both
+concurrency:
+  group: assignment-01-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: "Build & test (${{ matrix.app }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [page1, page2]
+    defaults:
+      run:
+        working-directory: assignments/01-product-catalog/${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: assignments/01-product-catalog/${{ matrix.app }}/pom.xml
+
+      - name: Run tests and build the JAR
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -ntp verify
+
+      - name: Upload test reports if something failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-${{ matrix.app }}
+          path: assignments/01-product-catalog/${{ matrix.app }}/target/surefire-reports/
+
+  docker:
+    name: "Docker image builds (${{ matrix.app }})"
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [page1, page2]
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same Dockerfile the EC2 server uses, so a broken image is caught here and not on the server
+      - name: Build the image (not pushed anywhere)
+        run: docker build -t progweb-${{ matrix.app }}:ci assignments/01-product-catalog/${{ matrix.app }}
