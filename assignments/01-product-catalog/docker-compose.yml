@@ -1,3 +1,7 @@
+# Fixed project name: containers and the DB volume are always called progweb-*,
+# no matter which folder the compose file is started from.
+name: progweb
+
 services:
   db:
     image: postgres:16
