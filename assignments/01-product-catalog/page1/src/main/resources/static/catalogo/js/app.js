@@ -101,13 +101,34 @@ function card(p, q) {
   </article>`;
 }
 
+// Friendly message when nothing matches, with a button to start over
+function emptyState(q) {
+  const why = q && $stockFilter.value !== "all" ? "your search and stock filter"
+            : q ? `"${escapeHtml(q)}"` : "this stock filter";
+  return `
+    <div class="empty-state">
+      <div class="empty-icon" aria-hidden="true">🔍</div>
+      <h2>No products found</h2>
+      <p>Nothing matches ${why}. Try another word, check the code or clear the filters.</p>
+      <button type="button" id="clearFilters" class="btn btn-outline-success btn-sm">Clear filters</button>
+    </div>`;
+}
+
+function clearFilters() {
+  $search.value = "";
+  $stockFilter.value = "all";
+  closeSuggestions();
+  render();
+  $search.focus();
+}
+
 function render() {
   const q = $search.value.trim();
   const list = sortProducts(filterProducts(q).filter(byStock));
   $counter.textContent = q ? `${list.length} result(s) for "${q}"` : `${list.length} products`;
   $grid.innerHTML = list.length
     ? list.map((p) => card(p, fold(q))).join("")
-    : `<p class="tw-text-slate-600">No products match your search. Try another word or check the code.</p>`;
+    : emptyState(q);
 }
 
 // ===== Predictive suggestions =====
@@ -151,6 +172,7 @@ function moveActive(delta) {
 $search.addEventListener("input", () => { render(); suggest(); });
 $sort.addEventListener("change", render);
 $stockFilter.addEventListener("change", render);
+$grid.addEventListener("click", (e) => { if (e.target.id === "clearFilters") clearFilters(); });
 $search.addEventListener("keydown", (e) => {
   if (e.key === "ArrowDown") { e.preventDefault(); moveActive(1); }
   else if (e.key === "ArrowUp") { e.preventDefault(); moveActive(-1); }
