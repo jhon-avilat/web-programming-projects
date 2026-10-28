@@ -34,6 +34,9 @@ cp .env.example .env        # then put a real DB_PASSWORD (.env is ignored by gi
 docker compose up -d --build
 ```
 
+Then open http://localhost/ (gateway), http://localhost/page1/ or http://localhost/page2/page2/index.html.
+The apps are also still reachable directly on ports 8080 and 8081. Deployment to AWS: [docs/deployment.md](../../docs/deployment.md).
+
 ## Quick start without Docker (for each project)
 
 1. Make sure **PostgreSQL** is running on `localhost:5432`.
@@ -49,7 +52,8 @@ docker compose up -d --build
 ```
 assignments/01-product-catalog/
 ├── README.md
-├── docker-compose.yml        ← db + page1 + page2
+├── docker-compose.yml        ← db + page1 + page2 + gateway
+├── gateway/                  ← Nginx gateway config and landing page
 ├── docker/init-db.sql        ← creates both databases on first start
 ├── page1/                    ← ProgramacionWebPage1 (Maven project)
 │   ├── README.md

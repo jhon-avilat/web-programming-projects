@@ -32,9 +32,18 @@ cp .env.example .env      # put the real DB_PASSWORD (the same one Postgres alre
 docker compose up -d --build
 ```
 
-> If the old compose file was running from another folder, stop it first with `docker compose down`
-> **without** `-v`, so the database volume (and its data) is kept.
-> The volume name depends on the folder name, so check `docker volume ls` before deleting anything.
+> **Moving from the old setup (keep the data).** The compose project is now always called `progweb`,
+> so the database volume is `progweb_pgdata`. The old setup used a volume named after its folder
+> (for example `web-programming-projects_pgdata`). Before the first `up`:
+>
+> ```bash
+> docker compose -f <old-folder>/docker-compose.yml down        # NO -v: keeps the old volume
+> docker volume ls                                               # find the old *_pgdata volume
+> docker volume create progweb_pgdata
+> docker run --rm -v <old>_pgdata:/from -v progweb_pgdata:/to alpine sh -c "cp -a /from/. /to/"
+> ```
+>
+> If the old data doesn't matter, skip this: Postgres starts empty and `products_seed.sql` fills it again.
 
 ### 2. GitHub secrets (repo → Settings → Secrets and variables → Actions)
 

@@ -19,6 +19,7 @@ web-programming-projects/
 ├── .github/workflows/        ← one CI workflow per assignment
 ├── assignments/
 │   └── 01-product-catalog/   ← one folder per assignment
+├── docs/deployment.md        ← how everything is deployed to AWS EC2
 └── .gitignore
 ```
 
@@ -28,3 +29,12 @@ web-programming-projects/
 2. Create a folder `assignments/NN-short-name/` with its own README.
 3. Add a row to the table above.
 4. Copy `.github/workflows/assignment-01-ci.yml`, rename it and change the paths.
+
+## Deployment
+
+Everything runs on one AWS EC2 instance with Docker Compose, deployed from GitHub Actions on demand.
+See [docs/deployment.md](./docs/deployment.md).
+
+## How we work
+
+Jira issue → branch → small commits → pull request → CI → merge. See [CONTRIBUTING.md](./CONTRIBUTING.md).
