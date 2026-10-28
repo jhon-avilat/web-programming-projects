@@ -1,8 +1,8 @@
 package uce.edu.ProgramacionWeb.Service;
 
 import java.util.List;
-import java.util.Optional;
 import org.springframework.stereotype.Service;
+import uce.edu.ProgramacionWeb.Exception.ProductNotFoundException;
 import uce.edu.ProgramacionWeb.Model.Producto;
 import uce.edu.ProgramacionWeb.Repository.ProductoRepository;
 
@@ -22,18 +22,29 @@ public class ProductoService {
         return productoRepository.save(producto);
     }
 
+    // Updates only if the product exists, so a PUT with a wrong id
+    // does not create a new product by accident
+    public Producto actualizarProducto(long numProducto, Producto producto) {
+        if (!productoRepository.existsById(numProducto)) {
+            throw new ProductNotFoundException(numProducto);
+        }
+        producto.setNumProducto(numProducto);
+        return productoRepository.save(producto);
+    }
+
     public List<Producto> listarProducto() {
         return productoRepository.findAll();
     }
 
     public Producto getProductoPorNumProd(long numProducto) {
-        Optional<Producto> optional = productoRepository.findById(numProducto);
-        return optional.orElseThrow(() ->
-            new RuntimeException("Product not found with ID: " + numProducto)
-        );
+        return productoRepository.findById(numProducto)
+                .orElseThrow(() -> new ProductNotFoundException(numProducto));
     }
 
     public void eliminarProdPorNumProd(long numProd) {
-        this.productoRepository.deleteById(numProd);
+        if (!productoRepository.existsById(numProd)) {
+            throw new ProductNotFoundException(numProd);
+        }
+        productoRepository.deleteById(numProd);
     }
 }
