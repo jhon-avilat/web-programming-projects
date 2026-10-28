@@ -15,9 +15,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice(annotations = RestController.class)
 public class ApiExceptionHandler {
 
-    @ExceptionHandler(CharacterNotFoundException.class)
+    @ExceptionHandler({CharacterNotFoundException.class, FavoriteNotFoundException.class})
     public ProblemDetail handleNotFound(RuntimeException ex) {
         return problem(HttpStatus.NOT_FOUND, "Not found", ex.getMessage());
+    }
+
+    @ExceptionHandler(FavoriteAlreadyExistsException.class)
+    public ProblemDetail handleConflict(FavoriteAlreadyExistsException ex) {
+        return problem(HttpStatus.CONFLICT, "Already a favorite", ex.getMessage());
     }
 
     // The external API failed: 502 Bad Gateway (the problem is not in our app)
