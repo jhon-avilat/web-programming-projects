@@ -24,7 +24,10 @@
                         <td th:text="${productos.fechIngreso}"></td>
                         <td>
                             <a th:href="@{/mostrarFormActualizarProd/{numProd}(numProd=${productos.numProducto})}" class="btn btn-primary">Edit</a>
-                            <a th:href="@{/eliminarProducto/{numProd}(numProd=${productos.numProducto})}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this product?');">Delete</a>
+                            <form th:action="@{/eliminarProducto/{numProd}(numProd=${productos.numProducto})}" method="post" class="d-inline"
+                                  onsubmit="return confirm('Are you sure you want to delete this product?');">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
                         </td>
                     </tr>
                 </tbody>
