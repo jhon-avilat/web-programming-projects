@@ -3,7 +3,7 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the .env file}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init.sql
@@ -19,9 +19,9 @@ services:
       db:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/ProgramacionWebPage1
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      DB_URL: jdbc:postgresql://db:5432/ProgramacionWebPage1
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "8080:8080"
 
@@ -32,9 +32,9 @@ services:
       db:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/ProgramacionWebPage2
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      DB_URL: jdbc:postgresql://db:5432/ProgramacionWebPage2
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "8081:8081"
 

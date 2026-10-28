@@ -30,7 +30,7 @@ Each project is a **self-contained Maven project** with its own database, its ow
 From this folder:
 
 ```bash
-echo "DB_PASSWORD=change-me" > .env   # .env is ignored by git
+cp .env.example .env        # then put a real DB_PASSWORD (.env is ignored by git)
 docker compose up -d --build
 ```
 
@@ -38,7 +38,7 @@ docker compose up -d --build
 
 1. Make sure **PostgreSQL** is running on `localhost:5432`.
 2. Create the database of the project (see its README).
-3. Check `src/main/resources/application.properties`. The default credentials, `postgres / 1234`, are placeholders for local development: change them to match your PostgreSQL installation.
+3. The apps read `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` from the environment. If they are not set they use `postgres / 1234` on `localhost:5432`, which is only a placeholder for local development: set your own values (or change the defaults locally without committing them).
 4. Open the project folder in **NetBeans** and click **Run**, or run `./mvnw spring-boot:run` (Windows: `mvnw.cmd spring-boot:run`).
 5. Open the project URL:
    - Page 1 → http://localhost:8080
