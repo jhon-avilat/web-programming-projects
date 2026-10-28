@@ -278,4 +278,15 @@ $grid.addEventListener("keydown", (e) => {
 });
 document.getElementById("detailModal").addEventListener("hidden.bs.modal", () => { openId = null; });
 
+// ===== Dark / light theme (remembered in this browser) =====
+const $themeToggle = document.getElementById("themeToggle");
+function applyTheme(t) {
+  document.documentElement.setAttribute("data-bs-theme", t);
+  $themeToggle.textContent = t === "dark" ? "☀️" : "🌙";
+  try { localStorage.setItem("page2-theme", t); } catch { /* private mode: just don't remember it */ }
+}
+$themeToggle.addEventListener("click", () =>
+  applyTheme(document.documentElement.getAttribute("data-bs-theme") === "dark" ? "light" : "dark"));
+$themeToggle.textContent = document.documentElement.getAttribute("data-bs-theme") === "dark" ? "☀️" : "🌙";
+
 loadFavorites().then(() => search(1)); // initial load without waiting

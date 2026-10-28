@@ -9,13 +9,23 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script>tailwind.config = { prefix: 'tw-', corePlugins: { preflight: false } };</script>
   <link href="css/styles.css" rel="stylesheet">
+  <script>
+    // Apply the saved theme before the page is drawn (avoids a white flash in dark mode)
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("page2-theme"); } catch (e) {}
+      if (!t) t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.setAttribute("data-bs-theme", t);
+    })();
+  </script>
 </head>
 <body>
-  <nav class="navbar bg-white border-bottom sticky-top">
+  <nav class="navbar bg-body border-bottom sticky-top">
     <div class="container header-flex">
       <div class="d-flex align-items-center gap-3">
         <a href="/" class="btn btn-outline-secondary btn-sm">Back to menu</a>
         <span class="brand">Rick and Morty</span>
+        <button id="themeToggle" type="button" class="btn btn-outline-secondary btn-sm" aria-label="Switch dark / light theme">🌙</button>
       </div>
       <div class="search-wrap">
         <input id="search" type="search" class="form-control" placeholder="Search character by name (results in 4 s)" autocomplete="off" aria-label="Search characters">
