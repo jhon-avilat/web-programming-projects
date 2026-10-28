@@ -24,9 +24,19 @@
   </nav>
 
   <main class="container py-4">
+    <div class="toolbar">
+      <ul class="nav nav-pills" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button id="tabAll" class="nav-link active" type="button" role="tab" aria-selected="true">All characters</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button id="tabFav" class="nav-link" type="button" role="tab" aria-selected="false">♥ Favorites <span id="favCount" class="badge text-bg-light">0</span></button>
+        </li>
+      </ul>
+    </div>
     <p id="status" class="tw-text-sm tw-text-slate-600 tw-mb-3" aria-live="polite"></p>
     <section id="grid" class="characters-grid" aria-label="Characters"></section>
-    <div class="tw-flex tw-items-center tw-justify-center tw-gap-3 tw-mt-4">
+    <div id="pager" class="tw-flex tw-items-center tw-justify-center tw-gap-3 tw-mt-4">
       <button id="prev" class="btn btn-outline-secondary btn-sm" disabled>Previous</button>
       <span id="pageInfo" class="tw-text-sm tw-text-slate-600"></span>
       <button id="next" class="btn btn-outline-secondary btn-sm" disabled>Next</button>
@@ -39,7 +49,8 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="modal-title fs-4" id="modalTitle"></h2>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" id="modalFav" class="btn btn-outline-danger btn-sm ms-auto me-2" aria-pressed="false">♡ Add to favorites</button>
+          <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body" id="modalBody"></div>
       </div>

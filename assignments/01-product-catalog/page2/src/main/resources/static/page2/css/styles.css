@@ -25,3 +25,19 @@ body { background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', s
 @media (min-width: 992px)  { .characters-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 1400px) { .characters-grid { grid-template-columns: repeat(4, 1fr); } }
 @media (min-width: 768px)  { .detail-flex { flex-direction: row !important; } .detail-flex img { width: 260px; } }
+
+/* Tabs (All characters / Favorites) */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1rem; }
+.nav-pills .nav-link.active { background: var(--accent); }
+.nav-pills .nav-link { color: var(--accent); }
+.nav-pills .nav-link.active .badge { color: var(--accent); }
+
+/* Favorite heart on top of the picture */
+.img-wrap { position: relative; }
+.fav-btn { position: absolute; top: .5rem; right: .5rem; width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 0;
+  background: rgba(255,255,255,.9); color: #c62828; font-size: 1.3rem; line-height: 1; display: grid; place-items: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,.25); transition: transform .15s; }
+.fav-btn:hover, .fav-btn:focus-visible { transform: scale(1.12); outline: 2px solid #c62828; outline-offset: 1px; }
+.fav-btn.is-fav { background: #c62828; color: #fff; }
+#modalFav.is-fav { background: #c62828; color: #fff; }
+.empty { grid-column: 1 / -1; text-align: center; padding: 3rem 1rem; color: #5a6b61; }
