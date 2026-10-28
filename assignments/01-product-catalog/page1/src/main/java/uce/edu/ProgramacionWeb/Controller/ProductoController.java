@@ -1,7 +1,9 @@
 package uce.edu.ProgramacionWeb.Controller;
 
 import org.springframework.stereotype.Controller;
+import jakarta.validation.Valid;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,8 +44,13 @@ public class ProductoController {
     }
 
     // SAVE (used for both insert and update)
+    // @Valid checks the rules in Producto. If something is wrong we show the same
+    // form again (with the error messages) instead of saving bad data.
     @PostMapping("grabarProducto")
-    public String grabarProducto(@ModelAttribute("producto") Producto producto) {
+    public String grabarProducto(@Valid @ModelAttribute("producto") Producto producto, BindingResult result) {
+        if (result.hasErrors()) {
+            return producto.getNumProducto() == null ? "nuevo_producto" : "actualizar_producto";
+        }
         productoService.insertarProducto(producto);
         return "redirect:/listarProductos";
     }

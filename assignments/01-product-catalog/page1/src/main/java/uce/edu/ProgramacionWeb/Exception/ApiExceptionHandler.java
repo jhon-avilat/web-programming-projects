@@ -1,7 +1,11 @@
 package uce.edu.ProgramacionWeb.Exception;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -17,6 +21,20 @@ public class ApiExceptionHandler {
     public ProblemDetail handleNotFound(ProductNotFoundException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problem.setTitle("Product not found");
+        return problem;
+    }
+
+    // @Valid failed on a JSON body: 400 with one message per wrong field, e.g.
+    // { "status": 400, "title": "Invalid product data", "errors": { "precio": "Price cannot be negative" } }
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new LinkedHashMap<>();
+        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
+            errors.putIfAbsent(error.getField(), error.getDefaultMessage());
+        }
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Some fields are not valid");
+        problem.setTitle("Invalid product data");
+        problem.setProperty("errors", errors);
         return problem;
     }
 }
