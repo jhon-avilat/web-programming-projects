@@ -45,3 +45,11 @@ body { background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', s
 /* Status filter next to the tabs */
 .status-filter { display: flex; align-items: center; gap: .5rem; margin: 0; }
 .status-filter select { width: auto; }
+
+/* Skeleton cards shown while loading */
+.skeleton { cursor: default; }
+.skeleton .sk-img { aspect-ratio: 1 / 1; background: var(--line); }
+.skeleton .sk-line { height: .8rem; border-radius: 4px; background: var(--line); }
+.skeleton .sk-img, .skeleton .sk-line { animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .skeleton .sk-img, .skeleton .sk-line { animation: none; } }

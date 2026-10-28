@@ -44,6 +44,7 @@ async function search(num = 1) {
   const name = $search.value.trim();
   const status = $statusFilter.value; // "" = all
   $status.textContent = "Loading characters…";
+  showSkeleton();
   try {
     const res = await fetch(`${BACKEND}/characters?page=${num}&name=${encodeURIComponent(name)}&status=${status}`, { signal: ctrl.signal });
     if (res.status === 404) { characters = []; info = null; render(); $status.textContent = "No characters found with those filters."; return; }
@@ -154,6 +155,15 @@ function favCard(f) {
       <dl class="data"><dt>Species</dt><dd>${escapeHtml(f.species) || "—"}</dd></dl>
     </div>
   </article>`;
+}
+
+// Grey placeholder cards while the data arrives, so the page doesn't jump around
+function showSkeleton(n = 8) {
+  $grid.innerHTML = Array.from({ length: n }, () => `
+    <div class="character-card skeleton" aria-hidden="true">
+      <div class="sk-img"></div>
+      <div class="body"><div class="sk-line w-75"></div><div class="sk-line w-50"></div><div class="sk-line w-100"></div></div>
+    </div>`).join("");
 }
 
 function render() {
