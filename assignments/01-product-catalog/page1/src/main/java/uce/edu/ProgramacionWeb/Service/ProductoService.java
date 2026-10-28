@@ -2,7 +2,6 @@ package uce.edu.ProgramacionWeb.Service;
 
 import java.util.List;
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uce.edu.ProgramacionWeb.Model.Producto;
 import uce.edu.ProgramacionWeb.Repository.ProductoRepository;
@@ -10,8 +9,13 @@ import uce.edu.ProgramacionWeb.Repository.ProductoRepository;
 @Service
 public class ProductoService {
 
-    @Autowired
-    private ProductoRepository productoRepository;
+    private final ProductoRepository productoRepository;
+
+    // Constructor injection: Spring passes the dependency in, the field can be final
+    // and the class is easy to test with a mock.
+    public ProductoService(ProductoRepository productoRepository) {
+        this.productoRepository = productoRepository;
+    }
 
     // Inserts (if numProducto is null) or updates (if it already exists)
     public Producto insertarProducto(Producto producto) {

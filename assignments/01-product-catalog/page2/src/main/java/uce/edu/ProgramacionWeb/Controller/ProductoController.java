@@ -1,6 +1,5 @@
 package uce.edu.ProgramacionWeb.Controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,8 +12,13 @@ import uce.edu.ProgramacionWeb.Service.ProductoService;
 @Controller
 public class ProductoController {
 
-    @Autowired
-    private ProductoService productoService;
+    private final ProductoService productoService;
+
+    // Constructor injection: Spring passes the dependency in, the field can be final
+    // and the class is easy to test with a mock.
+    public ProductoController(ProductoService productoService) {
+        this.productoService = productoService;
+    }
 
     // Main menu
     @GetMapping("/")

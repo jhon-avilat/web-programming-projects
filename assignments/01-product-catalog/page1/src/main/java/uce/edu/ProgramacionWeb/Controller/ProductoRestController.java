@@ -1,7 +1,6 @@
 package uce.edu.ProgramacionWeb.Controller;
 
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uce.edu.ProgramacionWeb.Model.Producto;
@@ -11,8 +10,13 @@ import uce.edu.ProgramacionWeb.Service.ProductoService;
 @RequestMapping("/api/productos")
 public class ProductoRestController {
 
-    @Autowired
-    private ProductoService productoService;
+    private final ProductoService productoService;
+
+    // Constructor injection: Spring passes the dependency in, the field can be final
+    // and the class is easy to test with a mock.
+    public ProductoRestController(ProductoService productoService) {
+        this.productoService = productoService;
+    }
 
     @GetMapping
     public List<Producto> listar() {
