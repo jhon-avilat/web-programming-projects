@@ -33,6 +33,15 @@
           <button id="tabFav" class="nav-link" type="button" role="tab" aria-selected="false">♥ Favorites <span id="favCount" class="badge text-bg-light">0</span></button>
         </li>
       </ul>
+      <label class="status-filter">
+        <span class="tw-text-sm">Status</span>
+        <select id="statusFilter" class="form-select form-select-sm" aria-label="Filter by status">
+          <option value="">All</option>
+          <option value="alive">Alive</option>
+          <option value="dead">Dead</option>
+          <option value="unknown">Unknown</option>
+        </select>
+      </label>
     </div>
     <p id="status" class="tw-text-sm tw-text-slate-600 tw-mb-3" aria-live="polite"></p>
     <section id="grid" class="characters-grid" aria-label="Characters"></section>

@@ -10,6 +10,7 @@ const $search = document.getElementById("search");
 const $grid = document.getElementById("grid");
 const $status = document.getElementById("status");
 const $pager = document.getElementById("pager");
+const $statusFilter = document.getElementById("statusFilter");
 const $prev = document.getElementById("prev");
 const $next = document.getElementById("next");
 const $pageInfo = document.getElementById("pageInfo");
@@ -41,10 +42,11 @@ async function search(num = 1) {
   ctrl = new AbortController();
   page = num;
   const name = $search.value.trim();
+  const status = $statusFilter.value; // "" = all
   $status.textContent = "Loading characters…";
   try {
-    const res = await fetch(`${BACKEND}/characters?page=${num}&name=${encodeURIComponent(name)}`, { signal: ctrl.signal });
-    if (res.status === 404) { characters = []; info = null; render(); $status.textContent = "No characters found with that name."; return; }
+    const res = await fetch(`${BACKEND}/characters?page=${num}&name=${encodeURIComponent(name)}&status=${status}`, { signal: ctrl.signal });
+    if (res.status === 404) { characters = []; info = null; render(); $status.textContent = "No characters found with those filters."; return; }
     if (!res.ok) throw new Error(`HTTP ${res.status}`, { cause: res.status });
     const data = await res.json();
     characters = data.results; info = data.info;
@@ -176,6 +178,7 @@ function showTab(tab) {
   $tabFav.classList.toggle("active", tab === "fav");
   $tabAll.setAttribute("aria-selected", tab === "all");
   $tabFav.setAttribute("aria-selected", tab === "fav");
+  $statusFilter.disabled = tab === "fav";
   if (tab === "fav") $status.textContent = `${favorites.size} favorite${favorites.size === 1 ? "" : "s"}`;
   else $status.textContent = info ? `${info.count} characters found` : "";
   render();
@@ -243,6 +246,8 @@ async function openDetail(id) {
 $search.addEventListener("input", scheduleSearch);
 $prev.addEventListener("click", () => search(page - 1));
 $next.addEventListener("click", () => search(page + 1));
+// Changing the status filter searches right away (no 4-second wait: it is a single click, not typing)
+$statusFilter.addEventListener("change", () => { if (view !== "all") showTab("all"); search(1); });
 $tabAll.addEventListener("click", () => showTab("all"));
 $tabFav.addEventListener("click", () => showTab("fav"));
 $grid.addEventListener("click", (e) => {

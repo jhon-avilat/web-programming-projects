@@ -41,3 +41,7 @@ body { background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', s
 .fav-btn.is-fav { background: #c62828; color: #fff; }
 #modalFav.is-fav { background: #c62828; color: #fff; }
 .empty { grid-column: 1 / -1; text-align: center; padding: 3rem 1rem; color: #5a6b61; }
+
+/* Status filter next to the tabs */
+.status-filter { display: flex; align-items: center; gap: .5rem; margin: 0; }
+.status-filter select { width: auto; }
