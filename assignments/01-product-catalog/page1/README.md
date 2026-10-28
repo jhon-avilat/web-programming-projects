@@ -81,9 +81,9 @@ A `@RestController` mapped to `/api/productos`. It reuses the existing `Producto
 |--------|----------|-------------|
 | `GET` | `/api/productos` | All products as a JSON array |
 | `GET` | `/api/productos/{id}` | One product; `404` if it does not exist |
-| `POST` | `/api/productos` | Creates a product (JSON body); any `id` sent is ignored |
-| `PUT` | `/api/productos/{id}` | Updates the product with that id |
-| `DELETE` | `/api/productos/{id}` | Deletes the product; returns `204 No Content` |
+| `POST` | `/api/productos` | Creates a product (JSON body); any `id` sent is ignored. Returns `201 Created` |
+| `PUT` | `/api/productos/{id}` | Updates the product with that id; `404` if it does not exist |
+| `DELETE` | `/api/productos/{id}` | Deletes the product; returns `204 No Content`, or `404` if it does not exist |
 
 The catalog and the REST controller are served by the same Spring Boot server, so a relative URL (`/api/productos`) is used and CORS is not needed.
 

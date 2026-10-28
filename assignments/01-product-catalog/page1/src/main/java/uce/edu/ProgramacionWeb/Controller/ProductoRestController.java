@@ -1,7 +1,7 @@
 package uce.edu.ProgramacionWeb.Controller;
 
+import java.net.URI;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uce.edu.ProgramacionWeb.Model.Producto;
@@ -11,33 +11,37 @@ import uce.edu.ProgramacionWeb.Service.ProductoService;
 @RequestMapping("/api/productos")
 public class ProductoRestController {
 
-    @Autowired
-    private ProductoService productoService;
+    private final ProductoService productoService;
+
+    // Constructor injection: Spring passes the dependency in, the field can be final
+    // and the class is easy to test with a mock.
+    public ProductoRestController(ProductoService productoService) {
+        this.productoService = productoService;
+    }
 
     @GetMapping
     public List<Producto> listar() {
         return productoService.listarProducto();
     }
 
+    // If the id does not exist the service throws ProductNotFoundException
+    // and ApiExceptionHandler turns it into a 404
     @GetMapping("/{id}")
-    public ResponseEntity<Producto> obtener(@PathVariable long id) {
-        try {
-            return ResponseEntity.ok(productoService.getProductoPorNumProd(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public Producto obtener(@PathVariable long id) {
+        return productoService.getProductoPorNumProd(id);
     }
 
+    // 201 Created + Location header pointing to the new product
     @PostMapping
-    public Producto crear(@RequestBody Producto producto) {
+    public ResponseEntity<Producto> crear(@RequestBody Producto producto) {
         producto.setNumProducto(null);
-        return productoService.insertarProducto(producto);
+        Producto creado = productoService.insertarProducto(producto);
+        return ResponseEntity.created(URI.create("/api/productos/" + creado.getNumProducto())).body(creado);
     }
 
     @PutMapping("/{id}")
     public Producto actualizar(@PathVariable long id, @RequestBody Producto producto) {
-        producto.setNumProducto(id);
-        return productoService.insertarProducto(producto);
+        return productoService.actualizarProducto(id, producto);
     }
 
     @DeleteMapping("/{id}")
