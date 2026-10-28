@@ -29,6 +29,26 @@
 
   <main class="container py-4">
     <div id="notice"></div>
+    <div class="toolbar">
+      <label>
+        <span class="tw-text-sm">Sort by</span>
+        <select id="sort" class="form-select form-select-sm">
+          <option value="name">Name (A–Z)</option>
+          <option value="price-asc">Price: low to high</option>
+          <option value="price-desc">Price: high to low</option>
+          <option value="newest">Newest first</option>
+        </select>
+      </label>
+      <label>
+        <span class="tw-text-sm">Stock</span>
+        <select id="stockFilter" class="form-select form-select-sm">
+          <option value="all">All</option>
+          <option value="in">In stock</option>
+          <option value="low">Low stock (5 or fewer)</option>
+          <option value="out">Out of stock</option>
+        </select>
+      </label>
+    </div>
     <p id="counter" class="tw-text-sm tw-text-slate-600 tw-mb-3" aria-live="polite"></p>
     <section id="grid" class="products-grid" aria-label="Products"></section>
   </main>

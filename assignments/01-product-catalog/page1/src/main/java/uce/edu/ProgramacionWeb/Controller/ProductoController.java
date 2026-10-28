@@ -4,6 +4,7 @@ import org.springframework.stereotype.Controller;
 import jakarta.validation.Valid;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,11 +48,17 @@ public class ProductoController {
     // @Valid checks the rules in Producto. If something is wrong we show the same
     // form again (with the error messages) instead of saving bad data.
     @PostMapping("grabarProducto")
-    public String grabarProducto(@Valid @ModelAttribute("producto") Producto producto, BindingResult result) {
+    public String grabarProducto(@Valid @ModelAttribute("producto") Producto producto, BindingResult result,
+                                 RedirectAttributes redirect) {
         if (result.hasErrors()) {
             return producto.getNumProducto() == null ? "nuevo_producto" : "actualizar_producto";
         }
+        boolean isNew = producto.getNumProducto() == null;
         productoService.insertarProducto(producto);
+        // Flash attribute: survives the redirect and is shown once on the list page
+        redirect.addFlashAttribute("message", isNew
+                ? "Product \"" + producto.getNomProducto() + "\" was added."
+                : "Product \"" + producto.getNomProducto() + "\" was updated.");
         return "redirect:/listarProductos";
     }
 
@@ -66,8 +73,9 @@ public class ProductoController {
     // DELETE (POST only: a GET link could delete data by accident, e.g. browser
     // prefetch or someone sharing the URL. GET on this path now returns 405.)
     @PostMapping("/eliminarProducto/{numProd}")
-    public String eliminarProducto(@PathVariable(value = "numProd") long numProd) {
+    public String eliminarProducto(@PathVariable(value = "numProd") long numProd, RedirectAttributes redirect) {
         productoService.eliminarProdPorNumProd(numProd);
+        redirect.addFlashAttribute("message", "Product no. " + numProd + " was deleted.");
         return "redirect:/listarProductos";
     }
 

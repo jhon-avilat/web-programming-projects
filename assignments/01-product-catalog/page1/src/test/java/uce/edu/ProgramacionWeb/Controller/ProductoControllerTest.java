@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -63,7 +64,8 @@ class ProductoControllerTest {
                         .param("precio", "12.50")
                         .param("stock", "3"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/listarProductos"));
+                .andExpect(redirectedUrl("/listarProductos"))
+                .andExpect(flash().attributeExists("message"));
 
         verify(productoService).insertarProducto(argThat(producto ->
                 producto.getNumProducto() == null
@@ -95,7 +97,8 @@ class ProductoControllerTest {
     void postDeleteRedirects() throws Exception {
         mockMvc.perform(post("/eliminarProducto/1"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/listarProductos"));
+                .andExpect(redirectedUrl("/listarProductos"))
+                .andExpect(flash().attributeExists("message"));
 
         verify(productoService).eliminarProdPorNumProd(1L);
     }
