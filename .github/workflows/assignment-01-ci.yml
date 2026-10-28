@@ -70,3 +70,55 @@ jobs:
       # Same Dockerfile the EC2 server uses, so a broken image is caught here and not on the server
       - name: Build the image (not pushed anywhere)
         run: docker build -t progweb-${{ matrix.app }}:ci assignments/01-product-catalog/${{ matrix.app }}
+
+  smoke:
+    name: "Full stack smoke test (gateway + apps + DB)"
+    needs: docker
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: assignments/01-product-catalog
+    env:
+      DB_PASSWORD: ci-only-password
+    steps:
+      - uses: actions/checkout@v4
+
+      # Starts exactly what runs on EC2: db + page1 + page2 + gateway
+      - name: Start the stack
+        run: docker compose up -d --build
+
+      - name: Wait until both apps answer through the gateway
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fs http://localhost/page1/api/productos >/dev/null && curl -fs http://localhost/page2/api/favorites >/dev/null; then
+              echo "Both apps are up"; exit 0
+            fi
+            sleep 3
+          done
+          echo "Apps did not start in time"; exit 1
+
+      - name: Check the routes
+        run: |
+          set -e
+          check() { code=$(curl -s -o /dev/null -w "%{http_code}" "$1"); echo "$1 -> $code"; [ "$code" = "$2" ]; }
+          check http://localhost/health 200
+          check http://localhost/ 200
+          check http://localhost/page1/ 200
+          check http://localhost/page1/catalogo/index.html 200
+          check http://localhost/page1/api/productos 200
+          check http://localhost/page1/api/productos/999999 404
+          check http://localhost/page2/page2/index.html 200
+          check http://localhost/page2/api/favorites 200
+          # Thymeleaf links must include the /page1 prefix (X-Forwarded-Prefix works)
+          curl -s http://localhost/page1/ | grep -q 'href="/page1/listarProductos"'
+          # The old direct ports still work
+          check http://localhost:8080/api/productos 200
+          check http://localhost:8081/api/favorites 200
+
+      - name: Show logs if something failed
+        if: failure()
+        run: docker compose logs --tail=200
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v

@@ -1,5 +1,7 @@
-// ===== Endpoint (same Spring Boot server, so a relative URL works and CORS is not needed) =====
-const API_URL = "/api/productos";
+// ===== Endpoint (same Spring Boot server, so CORS is not needed) =====
+// Relative path: from /catalogo/index.html it resolves to /api/productos, and behind
+// the gateway (/page1/catalogo/...) to /page1/api/productos.
+const API_URL = "../api/productos";
 
 const $search = document.getElementById("search");
 const $suggestions = document.getElementById("suggestions");
