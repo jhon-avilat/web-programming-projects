@@ -13,7 +13,7 @@ services:
       retries: 10
 
   page1:
-    build: ./ProgramacionWebPage1
+    build: ./page1
     restart: unless-stopped
     depends_on:
       db:
@@ -26,7 +26,7 @@ services:
       - "8080:8080"
 
   page2:
-    build: ./ProgramacionWebPage2
+    build: ./page2
     restart: unless-stopped
     depends_on:
       db:
