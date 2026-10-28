@@ -1,4 +1,8 @@
-// ===== Third-party API: Rick and Morty =====
+// ===== APIs =====
+// Characters now come from OUR backend (/api/characters), which calls Rick and Morty for us.
+// The path is relative ("../api") so it also works behind the gateway under /page2/.
+const BACKEND = "../api";
+// Episodes are still read straight from the public API (only used in the detail window).
 const API = "https://rickandmortyapi.com/api";
 const DELAY_MS = 4000; // search delay: 4 seconds
 
@@ -20,6 +24,7 @@ let characters = [], info = null, page = 1, ctrl = null, timer = null, tick = nu
 // Escape HTML: data from a third-party API must never be inserted raw (XSS)
 const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const res502 = (err) => err && err.cause === 502; // our backend says the external API failed
 const statusClass = (c) => STATUS_CLASS[c.status] || STATUS_CLASS.unknown;
 
 // ===== Load from the API (fetch + async/await) =====
@@ -30,16 +35,16 @@ async function search(num = 1) {
   const name = $search.value.trim();
   $status.textContent = "Loading characters…";
   try {
-    const res = await fetch(`${API}/character?page=${num}&name=${encodeURIComponent(name)}`, { signal: ctrl.signal });
+    const res = await fetch(`${BACKEND}/characters?page=${num}&name=${encodeURIComponent(name)}`, { signal: ctrl.signal });
     if (res.status === 404) { characters = []; info = null; render(); $status.textContent = "No characters found with that name."; return; }
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`, { cause: res.status });
     const data = await res.json();
     characters = data.results; info = data.info;
     render();
     $status.textContent = `${info.count} characters found`;
   } catch (err) {
     if (err.name === "AbortError") return;
-    $status.textContent = "Could not reach the Rick and Morty API. Check your connection and try again.";
+    $status.textContent = res502(err) ? "The Rick and Morty API is not answering right now. Try again in a moment." : "Could not reach the server. Check your connection and try again.";
   }
 }
 

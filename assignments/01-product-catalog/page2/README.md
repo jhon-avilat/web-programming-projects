@@ -132,6 +132,26 @@ Run `products_seed.sql` in pgAdmin on the `ProgramacionWebPage2` database after 
 | http://localhost:8081/listarProductos | Product list (CRUD) |
 | http://localhost:8081/page2/index.html | Rick and Morty page |
 
+## REST API (new)
+
+Page 2 now has its own backend API. The browser talks to it, and the backend talks to Rick and Morty.
+
+| Method | Endpoint | What it does | Status codes |
+|--------|----------|--------------|--------------|
+| `GET` | `/api/characters?page=1&name=rick&status=alive` | Search characters (proxy to Rick and Morty) | `200`, `404` nothing found, `502` external API down |
+| `GET` | `/api/characters/{id}` | One character | `200`, `404`, `502` |
+| `GET` | `/api/favorites` | Saved favorites, newest first | `200` |
+| `POST` | `/api/favorites` | Save a favorite (stored in PostgreSQL) | `201`, `400` invalid body, `409` already saved |
+| `DELETE` | `/api/favorites/{characterId}` | Remove a favorite | `204`, `404` |
+
+Example body for `POST /api/favorites`:
+
+```json
+{ "characterId": 1, "name": "Rick Sanchez", "image": "https://rickandmortyapi.com/api/character/avatar/1.jpeg", "status": "Alive", "species": "Human" }
+```
+
+Layers (same pattern as `Producto`): `RickAndMortyClient` (RestClient, 3 s / 5 s timeouts) · `Favorite` → `FavoriteRepository` → `FavoriteService` → `FavoriteRestController`. Errors are returned as JSON *problem details* by `ApiExceptionHandler`.
+
 ## Rick and Morty API reference
 
 | Endpoint | Used for |
