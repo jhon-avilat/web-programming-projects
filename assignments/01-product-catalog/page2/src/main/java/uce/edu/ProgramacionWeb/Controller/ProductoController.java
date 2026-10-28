@@ -63,8 +63,9 @@ public class ProductoController {
         return "actualizar_producto";
     }
 
-    // DELETE
-    @GetMapping("/eliminarProducto/{numProd}")
+    // DELETE (POST only: a GET link could delete data by accident, e.g. browser
+    // prefetch or someone sharing the URL. GET on this path now returns 405.)
+    @PostMapping("/eliminarProducto/{numProd}")
     public String eliminarProducto(@PathVariable(value = "numProd") long numProd) {
         productoService.eliminarProdPorNumProd(numProd);
         return "redirect:/listarProductos";
