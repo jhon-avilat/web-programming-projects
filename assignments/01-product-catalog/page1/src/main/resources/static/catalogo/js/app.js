@@ -6,6 +6,8 @@ const $suggestions = document.getElementById("suggestions");
 const $grid = document.getElementById("grid");
 const $counter = document.getElementById("counter");
 const $notice = document.getElementById("notice");
+const $sort = document.getElementById("sort");
+const $stockFilter = document.getElementById("stockFilter");
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const dateFmt = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" });
@@ -63,10 +65,22 @@ function filterProducts(query) {
 }
 
 function stockStatus(stock) {
-  if (stock <= 0) return { text: "Out of stock", cls: "text-bg-danger" };
-  if (stock <= 5) return { text: "Low stock", cls: "text-bg-warning" };
-  return { text: "In stock", cls: "text-bg-success" };
+  if (stock <= 0) return { key: "out", text: "Out of stock", cls: "text-bg-danger" };
+  if (stock <= 5) return { key: "low", text: "Low stock", cls: "text-bg-warning" };
+  return { key: "in", text: "In stock", cls: "text-bg-success" };
 }
+
+// Stock filter: "all", "in", "low" or "out" (same groups as the badge on each card)
+const byStock = (p) => $stockFilter.value === "all" || stockStatus(Number(p.stock)).key === $stockFilter.value;
+
+// Sorting. Returns a new array so the original order of products is not changed.
+const SORTERS = {
+  name: (a, b) => String(a.nomProducto).localeCompare(String(b.nomProducto), "en", { sensitivity: "base" }),
+  "price-asc": (a, b) => Number(a.precio) - Number(b.precio),
+  "price-desc": (a, b) => Number(b.precio) - Number(a.precio),
+  newest: (a, b) => String(b.fechIngreso ?? "").localeCompare(String(a.fechIngreso ?? "")),
+};
+const sortProducts = (list) => [...list].sort(SORTERS[$sort.value] || SORTERS.name);
 
 function card(p, q) {
   const s = stockStatus(Number(p.stock));
@@ -89,7 +103,7 @@ function card(p, q) {
 
 function render() {
   const q = $search.value.trim();
-  const list = filterProducts(q);
+  const list = sortProducts(filterProducts(q).filter(byStock));
   $counter.textContent = q ? `${list.length} result(s) for "${q}"` : `${list.length} products`;
   $grid.innerHTML = list.length
     ? list.map((p) => card(p, fold(q))).join("")
@@ -135,6 +149,8 @@ function moveActive(delta) {
 }
 
 $search.addEventListener("input", () => { render(); suggest(); });
+$sort.addEventListener("change", render);
+$stockFilter.addEventListener("change", render);
 $search.addEventListener("keydown", (e) => {
   if (e.key === "ArrowDown") { e.preventDefault(); moveActive(1); }
   else if (e.key === "ArrowUp") { e.preventDefault(); moveActive(-1); }
