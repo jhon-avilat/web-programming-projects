@@ -1,6 +1,7 @@
 package uce.edu.ProgramacionWeb.Controller;
 
 import java.net.URI;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,14 +34,14 @@ public class ProductoRestController {
 
     // 201 Created + Location header pointing to the new product
     @PostMapping
-    public ResponseEntity<Producto> crear(@RequestBody Producto producto) {
+    public ResponseEntity<Producto> crear(@Valid @RequestBody Producto producto) {
         producto.setNumProducto(null);
         Producto creado = productoService.insertarProducto(producto);
         return ResponseEntity.created(URI.create("/api/productos/" + creado.getNumProducto())).body(creado);
     }
 
     @PutMapping("/{id}")
-    public Producto actualizar(@PathVariable long id, @RequestBody Producto producto) {
+    public Producto actualizar(@PathVariable long id, @Valid @RequestBody Producto producto) {
         return productoService.actualizarProducto(id, producto);
     }
 
