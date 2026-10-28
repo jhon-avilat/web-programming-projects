@@ -1,0 +1,11 @@
+# Store text files with LF in the repo, whatever OS edits them.
+# This avoids "LF will be replaced by CRLF" noise and broken shell scripts on Linux (EC2).
+* text=auto eol=lf
+
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.jar binary
