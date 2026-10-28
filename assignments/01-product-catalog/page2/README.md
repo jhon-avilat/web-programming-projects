@@ -37,7 +37,7 @@ It keeps the boilerplate product CRUD and adds a page, written in **vanilla Java
 ## Project structure
 
 ```
-ProgramacionWebPage2/
+page2/   (ProgramacionWebPage2)
 ├── pom.xml
 ├── products_seed.sql                          ← 20 sample products (one INSERT)
 ├── README.md

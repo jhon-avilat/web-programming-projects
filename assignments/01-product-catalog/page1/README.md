@@ -43,7 +43,7 @@ It extends the course boilerplate (Spring Boot + Thymeleaf + PostgreSQL CRUD) wi
 ## Project structure
 
 ```
-ProgramacionWebPage1/
+page1/   (ProgramacionWebPage1)
 ├── pom.xml
 ├── products_seed.sql                          ← 20 sample products (one INSERT)
 ├── README.md
