@@ -38,5 +38,19 @@ services:
     ports:
       - "8081:8081"
 
+  # Nginx gateway: single entry point on port 80 (/page1/ and /page2/). See gateway/nginx.conf
+  gateway:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      - page1
+      - page2
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./gateway/proxy-headers.inc:/etc/nginx/conf.d/proxy-headers.inc:ro
+      - ./gateway/html:/usr/share/nginx/html:ro
+    ports:
+      - "80:80"
+
 volumes:
   pgdata:
