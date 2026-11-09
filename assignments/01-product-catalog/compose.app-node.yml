@@ -1,0 +1,20 @@
+# Extra settings for an APP node behind the load balancer.
+# An app node runs only the gateway and both apps, and uses the database of the primary node,
+# so every node serves the same data. Turn it on in that node's .env:
+#   COMPOSE_FILE=docker-compose.yml:compose.app-node.yml
+#   DB_HOST=<private IP of the primary node>
+#   NODE_NAME=progweb-2
+services:
+  db:
+    # A profile that is never turned on, so this node doesn't start its own database
+    profiles: ["primary-only"]
+
+  page1:
+    depends_on: !reset []
+    environment:
+      DB_URL: jdbc:postgresql://${DB_HOST:?Set DB_HOST in the .env file}:5432/ProgramacionWebPage1
+
+  page2:
+    depends_on: !reset []
+    environment:
+      DB_URL: jdbc:postgresql://${DB_HOST:?Set DB_HOST in the .env file}:5432/ProgramacionWebPage2

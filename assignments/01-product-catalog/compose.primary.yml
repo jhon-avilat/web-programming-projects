@@ -1,0 +1,9 @@
+# Extra settings for the PRIMARY node (progweb-server) when there is more than one node.
+# The primary runs the whole stack and shares its database with the app nodes.
+# Turn it on in that node's .env:
+#   COMPOSE_FILE=docker-compose.yml:compose.primary.yml
+services:
+  db:
+    ports:
+      # Only the app-node security group can reach this port (see infra/alb.yml)
+      - "5432:5432"

@@ -83,6 +83,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The load balancer setup uses two extra compose files: make sure they stay valid
+      - name: Check the primary and app-node compose files
+        run: |
+          set -e
+          docker compose -f docker-compose.yml -f compose.primary.yml config --quiet
+          services=$(DB_HOST=10.0.0.10 docker compose -f docker-compose.yml -f compose.app-node.yml config --services | sort | tr '\n' ' ')
+          echo "App node services: $services"
+          [ "$services" = "gateway page1 page2 " ]
+          DB_HOST=10.0.0.10 docker compose -f docker-compose.yml -f compose.app-node.yml config | grep -q "jdbc:postgresql://10.0.0.10:5432/ProgramacionWebPage1"
+
       # Starts exactly what runs on EC2: db + page1 + page2 + gateway
       - name: Start the stack
         run: docker compose up -d --build
@@ -109,6 +119,9 @@ jobs:
           check http://localhost/page1/api/productos/999999 404
           check http://localhost/page2/page2/index.html 200
           check http://localhost/page2/api/favorites 200
+          # The gateway says which node answered (used to see the load balancer working)
+          curl -s http://localhost/health | grep -q "ok progweb-1"
+          curl -sI http://localhost/page1/ | grep -qi "^x-served-by: progweb-1"
           # Thymeleaf links must include the /page1 prefix (X-Forwarded-Prefix works)
           curl -s http://localhost/page1/ | grep -q 'href="/page1/listarProductos"'
           # The old direct ports still work
