@@ -45,6 +45,8 @@ services:
   # Nginx gateway: single entry point on port 80 (/page1/ and /page2/). See gateway/nginx.conf
   gateway:
     image: nginx:1.27-alpine
+    # Name of this node behind the load balancer; the gateway shows it in /health and X-Served-By
+    hostname: ${NODE_NAME:-progweb-1}
     restart: unless-stopped
     depends_on:
       - page1
