@@ -1,0 +1,226 @@
+# Application Load Balancer for assignment 01.
+#
+#   Internet ──► ALB (port 80, 2 availability zones)
+#                 ├─► progweb-server  (primary: gateway + page1 + page2 + PostgreSQL)   us-east-1c
+#                 └─► app node 2      (gateway + page1 + page2, uses the primary's DB)  us-east-1a
+#
+# Everything here is created and deleted together, so the ALB only costs money while I need it:
+#   create: aws cloudformation deploy --stack-name progweb-alb --template-file alb.yml --parameter-overrides AppNodeAmiId=ami-... SshCidr=x.x.x.x/32
+#   delete: aws cloudformation delete-stack --stack-name progweb-alb
+# Step by step guide and costs: docs/load-balancer.md
+AWSTemplateFormatVersion: "2010-09-09"
+Description: progweb - Application Load Balancer with two app nodes (assignment 01)
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-03fa2232aaf3c6387
+    Description: VPC where progweb-server lives (the default VPC)
+
+  PrimaryInstanceId:
+    Type: AWS::EC2::Instance::Id
+    Default: i-0794aa4b560353988
+    Description: progweb-server, the primary node
+
+  PrimarySecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Default: sg-0460f2ef5f4dd78fa
+    Description: Security group of progweb-server (launch-wizard-1)
+
+  PrimaryPrivateIp:
+    Type: String
+    Default: 172.31.19.187
+    Description: Private IP of progweb-server (it doesn't change when the instance is stopped)
+
+  PrimarySubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-0cbf2b7019b81ce42
+    Description: Subnet of progweb-server (us-east-1c)
+
+  AppNodeSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-0911c2c4e0731896c
+    Description: Subnet for the second node, in another zone (us-east-1a). The ALB needs two zones.
+
+  AppNodeAmiId:
+    Type: AWS::EC2::Image::Id
+    Description: AMI created from progweb-server (it already has Docker, the repo and the .env)
+
+  AppNodeInstanceType:
+    Type: String
+    Default: t3.small
+    AllowedValues: [t3.micro, t3.small]
+    Description: t3.small fits both Spring apps comfortably; t3.micro (1 GB) is cheaper but tight
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: progweb-key
+
+  SshCidr:
+    Type: String
+    AllowedPattern: '^(\d{1,3}\.){3}\d{1,3}/32$'
+    Description: My public IP with /32, to SSH into the second node (e.g. 157.100.137.194/32)
+
+Resources:
+  # --- Security groups: Internet -> ALB -> nodes -> database ---
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: progweb ALB - HTTP from the Internet
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: progweb-alb-sg
+
+  AppNodeSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: progweb app node - HTTP only from the ALB, SSH only from my IP
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SshCidr
+      Tags:
+        - Key: Name
+          Value: progweb-app-node-sg
+
+  # The primary also gets HTTP from the ALB, and opens PostgreSQL only to the app nodes.
+  # These two rules are removed again when the stack is deleted.
+  PrimaryHttpFromAlb:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref PrimarySecurityGroupId
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourceSecurityGroupId: !Ref AlbSecurityGroup
+      Description: HTTP from the progweb ALB
+
+  PrimaryDbFromAppNodes:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref PrimarySecurityGroupId
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !Ref AppNodeSecurityGroup
+      Description: PostgreSQL from the progweb app nodes only
+
+  # --- Second node: a copy of progweb-server that turns itself into an app node on first boot ---
+  AppNode:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AppNodeAmiId
+      InstanceType: !Ref AppNodeInstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref AppNodeSubnetId
+      SecurityGroupIds:
+        - !Ref AppNodeSecurityGroup
+      Tags:
+        - Key: Name
+          Value: progweb-app-node-2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euxo pipefail
+          REPO=/home/ec2-user/web-programming-projects
+          APP=$REPO/assignments/01-product-catalog
+
+          # Docker may still be starting when this script runs
+          until docker info > /dev/null 2>&1; do sleep 2; done
+
+          # The AMI is a copy of the primary, so it starts the primary's stack (with its own DB).
+          # Stop it and turn this copy into an app node that uses the primary's database.
+          cd "$APP"
+          docker compose down || true
+          sed -i '/^COMPOSE_FILE=/d;/^DB_HOST=/d;/^NODE_NAME=/d' .env
+          cat >> .env <<'ENV'
+          COMPOSE_FILE=docker-compose.yml:compose.app-node.yml
+          NODE_NAME=progweb-2
+          ENV
+          echo "DB_HOST=${PrimaryPrivateIp}" >> .env
+
+          runuser -u ec2-user -- git -C "$REPO" pull --ff-only
+          docker compose up -d --build --remove-orphans
+
+  # --- Load balancer ---
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: progweb-tg
+      VpcId: !Ref VpcId
+      Protocol: HTTP
+      Port: 80
+      TargetType: instance
+      # The Nginx gateway answers /health with "ok <node name>"
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 10
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: "200"
+      TargetGroupAttributes:
+        # Flash messages ("Product saved") live in the HTTP session of one node,
+        # so a browser keeps talking to the same node for an hour
+        - Key: stickiness.enabled
+          Value: "true"
+        - Key: stickiness.type
+          Value: lb_cookie
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: "3600"
+        - Key: deregistration_delay.timeout_seconds
+          Value: "30"
+      Targets:
+        - Id: !Ref PrimaryInstanceId
+          Port: 80
+        - Id: !Ref AppNode
+          Port: 80
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: progweb-alb
+      Type: application
+      Scheme: internet-facing
+      IpAddressType: ipv4
+      # Only two zones: each zone adds a public IPv4 address that is billed by the hour
+      Subnets:
+        - !Ref PrimarySubnetId
+        - !Ref AppNodeSubnetId
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+      Tags:
+        - Key: Name
+          Value: progweb-alb
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+Outputs:
+  AlbUrl:
+    Description: Open this in the browser
+    Value: !Sub "http://${LoadBalancer.DNSName}/"
+  AppNodeInstanceId:
+    Value: !Ref AppNode
+  AppNodePublicIp:
+    Description: Only for SSH (ec2-user); web traffic goes through the ALB
+    Value: !GetAtt AppNode.PublicIp
