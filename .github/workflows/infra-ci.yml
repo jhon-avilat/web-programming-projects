@@ -1,0 +1,36 @@
+# Checks the AWS templates in infra/ before they are used.
+# cfn-lint catches wrong property names, bad references and invalid values,
+# so a broken template is found in the pull request and not halfway through creating the stack.
+name: "Infra · CloudFormation lint"
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: cfn-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install cfn-lint
+        run: pip install --quiet cfn-lint
+
+      - name: Lint the templates
+        run: cfn-lint --regions us-east-1 -- infra/*.yml
