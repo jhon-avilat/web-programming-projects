@@ -20,6 +20,8 @@ web-programming-projects/
 ├── assignments/
 │   └── 01-product-catalog/   ← one folder per assignment
 ├── docs/deployment.md        ← how everything is deployed to AWS EC2
+├── docs/load-balancer.md     ← optional AWS load balancer with two nodes
+├── infra/alb.yml             ← CloudFormation template for that load balancer
 └── .gitignore
 ```
 
@@ -34,6 +36,9 @@ web-programming-projects/
 
 Everything runs on one AWS EC2 instance with Docker Compose, deployed from GitHub Actions on demand.
 See [docs/deployment.md](./docs/deployment.md).
+
+For demos it can also run on two instances behind an AWS Application Load Balancer, created and deleted
+with one CloudFormation command: see [docs/load-balancer.md](./docs/load-balancer.md).
 
 ## How we work
 
