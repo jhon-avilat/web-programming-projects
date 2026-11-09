@@ -88,6 +88,30 @@ curl -sI $ALB/page1/ | grep -i x-served-by              # which node served the 
 - To see failover: stop the containers on one node (`docker compose stop gateway`); after ~30 s the
   target is unhealthy and every request goes to the other node.
 
+## Presenting it (when the stack already exists)
+
+Between demos the stack can stay created with **both instances stopped**: then only the ALB and its
+two public IPs are billed (≈ US$0.03 per hour) and the ALB address doesn't change.
+
+**Before the presentation (≈ 5 minutes):**
+
+1. EC2 → Instances → start **`progweb-server` first** (it has the database).
+2. When it is *Running*, start **`progweb-app-node-2`**. Its apps retry until the database answers.
+3. EC2 → Target groups → `progweb-tg` → Targets: wait until both are **healthy**.
+4. CloudFormation → `progweb-alb` → Outputs → open **AlbUrl**.
+
+**Demo script:**
+
+| Show | How |
+|------|-----|
+| One address for everything | Open `AlbUrl`, then `/page1/` and `/page2/page2/index.html` |
+| The traffic is shared | In CloudShell: `for i in 1 2 3 4 5 6; do curl -s $ALB/health; done` → `ok progweb-1` / `ok progweb-2` |
+| Same data on both nodes | `curl -sI $ALB/page1/api/productos \| grep -i x-served-by` a few times: different node, same products |
+| Sticky sessions | In the browser, save a product: the green message appears, because the browser stays on one node (cookie `AWSALB`) |
+| Failover | Stop `progweb-app-node-2` in the console; after ~20 s every answer is `ok progweb-1` and the pages keep working. Start it again and it rejoins by itself |
+
+**After the presentation:** stop both instances again, or delete the stack (next section) if no more demos are planned.
+
 ## Delete it (stop paying for the ALB)
 
 ```bash
@@ -103,5 +127,8 @@ This removes the ALB, the target group, the second node (terminated) and the ext
 - **The database is still a single point of failure**: if `progweb-server` goes down, both nodes lose
   the database. The production answer is Amazon RDS Multi-AZ, which costs much more.
 - **HTTP only.** HTTPS needs a domain and a certificate (AWS Certificate Manager is free, the domain is not).
+- **SSH to the second node may time out with a /32 rule** if the internet provider uses a pool of public
+  IPs (CGNAT): the IP seen by `checkip` is not always the one SSH leaves from. Use a /24 for `SshCidr`.
+  Web traffic is not affected, it always goes through the ALB.
 - **The deploy workflow updates one host.** With two nodes, run `git pull && docker compose up -d --build`
   on both, or create a new AMI and recreate the stack.
