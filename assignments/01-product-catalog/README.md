@@ -37,6 +37,17 @@ docker compose up -d --build
 Then open http://localhost/ (gateway), http://localhost/page1/ or http://localhost/page2/page2/index.html.
 The apps are also still reachable directly on ports 8080 and 8081. Deployment to AWS: [docs/deployment.md](../../docs/deployment.md).
 
+## Running more than one node (load balancer)
+
+The same code can run on several instances behind an AWS Application Load Balancer. Each node chooses its role in its own `.env`:
+
+| Node | `.env` | What it runs |
+|------|--------|--------------|
+| Primary (`progweb-server`) | `COMPOSE_FILE=docker-compose.yml:compose.primary.yml` | db + page1 + page2 + gateway, and shares PostgreSQL on 5432 |
+| App node | `COMPOSE_FILE=docker-compose.yml:compose.app-node.yml`, `DB_HOST=<primary private IP>`, `NODE_NAME=progweb-2` | page1 + page2 + gateway, using the primary's database |
+
+`/health` and the `X-Served-By` header say which node answered.
+
 ## Quick start without Docker (for each project)
 
 1. Make sure **PostgreSQL** is running on `localhost:5432`.
@@ -53,6 +64,8 @@ The apps are also still reachable directly on ports 8080 and 8081. Deployment to
 assignments/01-product-catalog/
 ├── README.md
 ├── docker-compose.yml        ← db + page1 + page2 + gateway
+├── compose.primary.yml       ← extra settings for the primary node (load balancer)
+├── compose.app-node.yml      ← extra settings for an app node (load balancer)
 ├── gateway/                  ← Nginx gateway config and landing page
 ├── docker/init-db.sql        ← creates both databases on first start
 ├── page1/                    ← ProgramacionWebPage1 (Maven project)
